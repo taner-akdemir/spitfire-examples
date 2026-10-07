@@ -1,0 +1,41 @@
+{
+  "name": "gRPC: order lookups and a chat stream",
+  "variables": { "orderId": "ord-1001", "roomId": "load-test" },
+  "scenarios": [
+    {
+      "name": "orders",
+      "executor": { "type": "constant-arrival-rate", "rate": 300, "timeUnit": "1s",
+                    "duration": "5m", "preAllocatedVUs": 30, "maxVUs": 100 },
+      "steps": [
+        { "id": "get_order", "name": "Get order",
+          "protocol": "grpc", "connection": "orders-grpc",
+          "grpc": {
+            "method": "shop.v1.OrderService/GetOrder",
+            "message": "{\"orderId\": \"{{orderId}}\"}",
+            "metadata": [ { "key": "x-tenant", "value": "acme" } ]
+          },
+          "checks": [ { "type": "jsonPath", "path": "$.status", "op": "eq", "value": "PAID" } ] }
+      ]
+    },
+    {
+      "name": "chat",
+      "executor": { "type": "constant-vus", "vus": 20, "duration": "5m" },
+      "steps": [
+        { "id": "chat", "name": "Talk",
+          "protocol": "grpc", "connection": "chat-grpc",
+          "grpc": {
+            "method": "chat.v1.ChatService/Talk",
+            "message": "{\"roomId\": \"{{roomId}}\", \"text\": \"message {{__MSG}}\"}",
+            "stream": { "count": 20, "interval": "200ms", "receive": 20, "body": "all" }
+          },
+          "checks": [ { "type": "jsonPath", "path": "$[19].text", "op": "eq", "value": "message 19" } ] }
+      ]
+    }
+  ],
+  "thresholds": [
+    { "metric": "req_duration", "filter": { "step": "get_order" }, "expr": "p(95)<50" },
+    { "metric": "grpc_time_to_first_message", "filter": { "step": "chat" }, "expr": "p(95)<300" },
+    { "metric": "grpc_message_latency", "filter": { "step": "chat" }, "expr": "p(95)<100" },
+    { "metric": "req_failed", "expr": "rate<0.01" }
+  ]
+}

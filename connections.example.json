@@ -48,5 +48,19 @@
         "sslmode": "disable"
       }
     }
+  },
+  {
+    "name": "orders-grpc",
+    "type": "grpc",
+    "config": {
+      "address": "localhost:50051"
+    }
+  },
+  {
+    "name": "chat-grpc",
+    "type": "grpc",
+    "config": {
+      "address": "localhost:50052"
+    }
   }
 ]

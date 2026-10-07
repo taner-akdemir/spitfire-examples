@@ -6,6 +6,7 @@ Example load tests for [Spitfire](https://spitfire.tr/en), a self-hosted, distri
 |---|---|---|
 | [`http/shop-checkout.json`](http/shop-checkout.json) | HTTP | A user journey: log in once, take the token, list products, add to cart, check out; checks and per-step thresholds |
 | [`http/constant-rate-with-spike.json`](http/constant-rate-with-spike.json) | HTTP | A constant arrival rate with a spike scenario starting at 4 minutes; abort when the error rate crosses 2% |
+| [`grpc/orders-and-chat.json`](grpc/orders-and-chat.json) | gRPC | 300 unary calls/s with metadata, plus 20 bidirectional streams; time to first message and per-message latency thresholds |
 | [`kafka/produce-consume.json`](kafka/produce-consume.json) | Kafka | 500 events/s, 10 consumers, end-to-end latency and the lag of a real service's consumer group |
 | [`mqtt/device-telemetry.json`](mqtt/device-telemetry.json) | MQTT | 500 devices connecting over 2 minutes, QoS 1 telemetry every 4–6 s, a wildcard listener |
 | [`rabbitmq/order-queue.json`](rabbitmq/order-queue.json) | AMQP 0-9-1 | 300 persistent messages/s with publisher confirms, 10 consumers |
@@ -29,7 +30,7 @@ The web UI opens on port 8470. More: [installation guide](https://spitfire.tr/en
 
 ## Use an example
 
-**In the web UI:** Tests → **Open file** → pick a `.json` file. Non-HTTP examples refer to a connection by name (`kafka`, `broker`, `rabbit`, `cache`, `orders-db`): add a connection with that name under **Connections**, or rename it in the test. Change `base` and the other variables to your own system.
+**In the web UI:** Tests → **Open file** → pick a `.json` file. Non-HTTP examples refer to a connection by name (`orders-grpc`, `chat-grpc`, `kafka`, `broker`, `rabbit`, `cache`, `orders-db`): add a connection with that name under **Connections**, or rename it in the test. Change `base` and the other variables to your own system.
 
 **With the CLI**, no controller needed. The CLI ships in the Docker image:
 
@@ -44,6 +45,8 @@ For the non-HTTP examples, copy [`connections.example.json`](connections.example
 spitfire run kafka/produce-consume.json -c connections.json
 ```
 
+The gRPC example needs the service's schema: Spitfire reads it from server reflection, or from `.proto` files uploaded on the connection.
+
 `http/shop-checkout.json` posts to a cart and a checkout endpoint, so Spitfire treats it as a test that changes data: it asks for confirmation before every run (`--confirm-writes` on the CLI). Point it at a test environment, never at production.
 
 ## Guides
@@ -51,6 +54,7 @@ spitfire run kafka/produce-consume.json -c connections.json
 The examples come from these guides, which explain what to measure and the usual mistakes:
 
 - [Load testing without scripting](https://spitfire.tr/en/guides/load-testing-without-scripting)
+- [gRPC load testing](https://spitfire.tr/en/guides/grpc-load-testing)
 - [Kafka load testing](https://spitfire.tr/en/guides/kafka-load-testing)
 - [MQTT load testing](https://spitfire.tr/en/guides/mqtt-load-testing)
 - [RabbitMQ load testing](https://spitfire.tr/en/guides/rabbitmq-load-testing)
