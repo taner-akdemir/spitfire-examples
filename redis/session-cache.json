@@ -1,0 +1,68 @@
+{
+  "name": "Redis: session cache",
+  "scenarios": [
+    {
+      "name": "sessions",
+      "executor": {
+        "type": "constant-arrival-rate",
+        "rate": 2000,
+        "timeUnit": "1s",
+        "duration": "10m",
+        "preAllocatedVUs": 50,
+        "maxVUs": 200
+      },
+      "steps": [
+        {
+          "id": "get",
+          "name": "Read session",
+          "protocol": "redis",
+          "connection": "cache",
+          "redis": {
+            "command": [
+              "GET",
+              "loadtest:session:{{$randInt 1 100000}}"
+            ]
+          },
+          "checks": [
+            {
+              "type": "status",
+              "op": "in",
+              "value": [
+                "ok",
+                "nil"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "set",
+          "name": "Write session",
+          "protocol": "redis",
+          "connection": "cache",
+          "redis": {
+            "command": [
+              "SET",
+              "loadtest:session:{{$randInt 1 100000}}",
+              "{{$randString 512}}",
+              "EX",
+              "600"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "thresholds": [
+    {
+      "metric": "req_duration",
+      "filter": {
+        "step": "get"
+      },
+      "expr": "p(99)<5"
+    },
+    {
+      "metric": "req_failed",
+      "expr": "rate<0.001"
+    }
+  ]
+}

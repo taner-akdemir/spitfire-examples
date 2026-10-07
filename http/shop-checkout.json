@@ -1,0 +1,187 @@
+{
+  "name": "Shop: log in, browse, add to cart, check out",
+  "variables": {
+    "base": "https://shop.example.com",
+    "password": "Test1234!"
+  },
+  "options": {
+    "timeout": "10s",
+    "gracefulStop": "30s"
+  },
+  "scenarios": [
+    {
+      "name": "shopper",
+      "executor": {
+        "type": "ramping-vus",
+        "startVUs": 0,
+        "stages": [
+          {
+            "duration": "1m",
+            "target": 50
+          },
+          {
+            "duration": "5m",
+            "target": 50
+          },
+          {
+            "duration": "30s",
+            "target": 0
+          }
+        ]
+      },
+      "steps": [
+        {
+          "id": "login",
+          "name": "Log in",
+          "once": true,
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/api/login",
+            "body": {
+              "type": "json",
+              "content": "{\"email\":\"user{{__VU}}@example.com\",\"password\":\"{{password}}\"}"
+            }
+          },
+          "extract": [
+            {
+              "var": "token",
+              "from": "jsonpath",
+              "expr": "$.token"
+            }
+          ],
+          "checks": [
+            {
+              "type": "status",
+              "value": 200
+            }
+          ]
+        },
+        {
+          "id": "products",
+          "name": "List products",
+          "request": {
+            "url": "{{base}}/api/products",
+            "query": [
+              {
+                "key": "page",
+                "value": "{{$randInt 1 20}}"
+              }
+            ],
+            "headers": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "extract": [
+            {
+              "var": "productId",
+              "from": "jsonpath",
+              "expr": "$.items[0].id"
+            }
+          ],
+          "checks": [
+            {
+              "type": "status",
+              "value": 200
+            },
+            {
+              "type": "latency",
+              "op": "lt",
+              "value": 800
+            }
+          ],
+          "thinkTime": {
+            "min": "1s",
+            "max": "3s"
+          }
+        },
+        {
+          "id": "cart",
+          "name": "Add to cart",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/api/cart",
+            "modifiesData": true,
+            "headers": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "content": "{\"productId\":\"{{productId}}\",\"quantity\":1}"
+            }
+          },
+          "checks": [
+            {
+              "type": "status",
+              "op": "in",
+              "value": [
+                200,
+                201
+              ]
+            }
+          ],
+          "thinkTime": {
+            "min": "1s",
+            "max": "2s"
+          }
+        },
+        {
+          "id": "checkout",
+          "name": "Check out",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/api/checkout",
+            "modifiesData": true,
+            "headers": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$uuid}}"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "content": "{\"paymentMethod\":\"test-card\"}"
+            }
+          },
+          "checks": [
+            {
+              "type": "status",
+              "value": 201
+            },
+            {
+              "type": "jsonPath",
+              "path": "$.status",
+              "value": "confirmed"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "thresholds": [
+    {
+      "metric": "req_duration",
+      "expr": "p(95)<800"
+    },
+    {
+      "metric": "req_failed",
+      "expr": "rate<0.01"
+    },
+    {
+      "metric": "req_duration",
+      "filter": {
+        "step": "checkout"
+      },
+      "expr": "p(95)<1500"
+    }
+  ]
+}

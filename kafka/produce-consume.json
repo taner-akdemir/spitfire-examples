@@ -1,0 +1,86 @@
+{
+  "name": "Kafka: produce and consume order events",
+  "scenarios": [
+    {
+      "name": "producer",
+      "executor": {
+        "type": "constant-arrival-rate",
+        "rate": 500,
+        "timeUnit": "1s",
+        "duration": "15m",
+        "preAllocatedVUs": 20,
+        "maxVUs": 100
+      },
+      "steps": [
+        {
+          "id": "produce",
+          "name": "Produce order event",
+          "protocol": "kafka",
+          "connection": "kafka",
+          "kafka": {
+            "action": "produce",
+            "topic": "orders",
+            "key": "order-{{$uuid}}",
+            "value": "{\"orderId\":\"{{$uuid}}\",\"amount\":{{$randInt 10 5000}}}",
+            "lagGroups": [
+              "order-service"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "consumer",
+      "executor": {
+        "type": "constant-vus",
+        "vus": 10,
+        "duration": "15m"
+      },
+      "steps": [
+        {
+          "id": "consume",
+          "name": "Consume order event",
+          "protocol": "kafka",
+          "connection": "kafka",
+          "kafka": {
+            "action": "consume",
+            "topic": "orders",
+            "groupId": "spitfire-loadtest",
+            "wait": "5s"
+          },
+          "checks": [
+            {
+              "type": "jsonPath",
+              "path": "$.orderId",
+              "op": "exists"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "thresholds": [
+    {
+      "metric": "req_duration",
+      "filter": {
+        "step": "produce"
+      },
+      "expr": "p(95)<50"
+    },
+    {
+      "metric": "req_failed",
+      "expr": "rate<0.001"
+    },
+    {
+      "metric": "kafka_e2e_latency",
+      "expr": "p(95)<500"
+    },
+    {
+      "metric": "kafka_consumer_lag",
+      "filter": {
+        "check": "order-service"
+      },
+      "expr": "value<100"
+    }
+  ]
+}

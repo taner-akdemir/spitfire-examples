@@ -1,0 +1,80 @@
+{
+  "name": "PostgreSQL read load",
+  "scenarios": [
+    {
+      "name": "reads",
+      "executor": {
+        "type": "ramping-vus",
+        "startVUs": 0,
+        "stages": [
+          {
+            "duration": "1m",
+            "target": 30
+          },
+          {
+            "duration": "5m",
+            "target": 30
+          },
+          {
+            "duration": "30s",
+            "target": 0
+          }
+        ]
+      },
+      "steps": [
+        {
+          "id": "order",
+          "name": "Get order",
+          "protocol": "sql",
+          "connection": "orders-db",
+          "sql": {
+            "query": "SELECT id, status, total FROM orders WHERE id = $1",
+            "params": [
+              "{{$randInt 1 100000}}"
+            ]
+          },
+          "checks": [
+            {
+              "type": "rowCount",
+              "op": "lte",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "id": "report",
+          "name": "Daily summary",
+          "protocol": "sql",
+          "connection": "orders-db",
+          "sql": {
+            "query": "SELECT date_trunc('hour', created_at) AS h, count(*) FROM orders WHERE created_at > now() - interval '1 day' GROUP BY 1 ORDER BY 1"
+          },
+          "thinkTime": {
+            "min": "500ms",
+            "max": "1s"
+          }
+        }
+      ]
+    }
+  ],
+  "thresholds": [
+    {
+      "metric": "req_duration",
+      "filter": {
+        "step": "order"
+      },
+      "expr": "p(95)<20"
+    },
+    {
+      "metric": "req_duration",
+      "filter": {
+        "step": "report"
+      },
+      "expr": "p(95)<300"
+    },
+    {
+      "metric": "req_failed",
+      "expr": "rate<0.001"
+    }
+  ]
+}

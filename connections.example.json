@@ -1,0 +1,52 @@
+[
+  {
+    "name": "kafka",
+    "type": "kafka",
+    "config": {
+      "brokers": [
+        "localhost:9092"
+      ]
+    }
+  },
+  {
+    "name": "broker",
+    "type": "mqtt",
+    "config": {
+      "brokers": [
+        "tcp://localhost:1883"
+      ]
+    }
+  },
+  {
+    "name": "rabbit",
+    "type": "amqp",
+    "config": {
+      "url": "amqp://localhost:5672/",
+      "username": "guest",
+      "password": "guest"
+    }
+  },
+  {
+    "name": "cache",
+    "type": "redis",
+    "config": {
+      "addresses": [
+        "localhost:6379"
+      ]
+    }
+  },
+  {
+    "name": "orders-db",
+    "type": "postgres",
+    "config": {
+      "host": "localhost",
+      "port": 5432,
+      "database": "app",
+      "username": "app",
+      "password": "change-me",
+      "params": {
+        "sslmode": "disable"
+      }
+    }
+  }
+]

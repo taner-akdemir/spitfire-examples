@@ -1,0 +1,25 @@
+# .github/workflows/load-test.yml
+#
+# Runs a test saved on your Spitfire controller as a performance gate: the
+# step fails when a threshold fails (exit code 99). Create a personal token
+# under "API tokens" in the profile menu and store it as SPITFIRE_TOKEN.
+on: [pull_request]
+permissions:
+  contents: read
+jobs:
+  load-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Load test
+        env:
+          SPITFIRE_URL: https://spitfire.example.com   # your controller
+          SPITFIRE_TOKEN: ${{ secrets.SPITFIRE_TOKEN }}
+        run: |
+          curl -fsSL "$SPITFIRE_URL/api/v1/runner-dist/spitfire-cli-linux-amd64.gz" | gunzip > spitfire && chmod +x spitfire
+          ./spitfire cloud run "Shop: log in, browse, add to cart, check out" --env staging --confirm-writes -o summary.json
+      - name: Keep the summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spitfire-summary
+          path: summary.json

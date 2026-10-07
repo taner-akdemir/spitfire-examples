@@ -1,0 +1,86 @@
+{
+  "name": "MQTT: device telemetry",
+  "scenarios": [
+    {
+      "name": "devices",
+      "executor": {
+        "type": "ramping-vus",
+        "startVUs": 0,
+        "stages": [
+          {
+            "duration": "2m",
+            "target": 500
+          },
+          {
+            "duration": "10m",
+            "target": 500
+          },
+          {
+            "duration": "30s",
+            "target": 0
+          }
+        ]
+      },
+      "steps": [
+        {
+          "id": "telemetry",
+          "name": "Send telemetry",
+          "protocol": "mqtt",
+          "connection": "broker",
+          "mqtt": {
+            "action": "publish",
+            "topic": "devices/{{__VU}}/telemetry",
+            "qos": 1,
+            "payload": "{\"device\":{{__VU}},\"temp\":{{$randInt 18 30}},\"ts\":{{$timestamp}}}"
+          },
+          "thinkTime": {
+            "min": "4s",
+            "max": "6s"
+          }
+        }
+      ]
+    },
+    {
+      "name": "listener",
+      "executor": {
+        "type": "constant-vus",
+        "vus": 2,
+        "duration": "12m30s"
+      },
+      "steps": [
+        {
+          "id": "listen",
+          "name": "Listen to telemetry",
+          "protocol": "mqtt",
+          "connection": "broker",
+          "mqtt": {
+            "action": "subscribe",
+            "topic": "devices/+/telemetry",
+            "qos": 1,
+            "wait": "5s"
+          },
+          "checks": [
+            {
+              "type": "jsonPath",
+              "path": "$.temp",
+              "op": "exists"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "thresholds": [
+    {
+      "metric": "req_duration",
+      "filter": {
+        "step": "telemetry"
+      },
+      "expr": "p(95)<100"
+    },
+    {
+      "metric": "req_failed",
+      "expr": "rate<0.001"
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "name": "RabbitMQ: order queue",
+  "scenarios": [
+    {
+      "name": "publisher",
+      "executor": {
+        "type": "constant-arrival-rate",
+        "rate": 300,
+        "timeUnit": "1s",
+        "duration": "10m",
+        "preAllocatedVUs": 20,
+        "maxVUs": 100
+      },
+      "steps": [
+        {
+          "id": "publish",
+          "name": "Publish order",
+          "protocol": "amqp",
+          "connection": "rabbit",
+          "amqp": {
+            "action": "publish",
+            "exchange": "orders",
+            "routingKey": "order.created",
+            "persistent": true,
+            "contentType": "application/json",
+            "body": "{\"orderId\":\"{{$uuid}}\",\"amount\":{{$randInt 10 5000}}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "consumer",
+      "executor": {
+        "type": "constant-vus",
+        "vus": 10,
+        "duration": "10m"
+      },
+      "steps": [
+        {
+          "id": "consume",
+          "name": "Consume order",
+          "protocol": "amqp",
+          "connection": "rabbit",
+          "amqp": {
+            "action": "consume",
+            "queue": "orders.loadtest",
+            "wait": "5s"
+          },
+          "checks": [
+            {
+              "type": "jsonPath",
+              "path": "$.orderId",
+              "op": "exists"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "thresholds": [
+    {
+      "metric": "req_duration",
+      "filter": {
+        "step": "publish"
+      },
+      "expr": "p(95)<50"
+    },
+    {
+      "metric": "req_failed",
+      "expr": "rate<0.001"
+    }
+  ]
+}

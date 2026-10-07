@@ -1,0 +1,107 @@
+{
+  "name": "Constant request rate with a spike",
+  "variables": {
+    "base": "https://api.example.com"
+  },
+  "options": {
+    "timeout": "5s"
+  },
+  "scenarios": [
+    {
+      "name": "normal",
+      "executor": {
+        "type": "constant-arrival-rate",
+        "rate": 200,
+        "timeUnit": "1s",
+        "duration": "10m",
+        "preAllocatedVUs": 50,
+        "maxVUs": 400
+      },
+      "steps": [
+        {
+          "id": "search",
+          "name": "Search",
+          "request": {
+            "url": "{{base}}/v1/search",
+            "query": [
+              {
+                "key": "q",
+                "value": "product{{$randInt 1 5000}}"
+              }
+            ]
+          },
+          "checks": [
+            {
+              "type": "status",
+              "value": 200
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "spike",
+      "startTime": "4m",
+      "executor": {
+        "type": "ramping-arrival-rate",
+        "startRate": 0,
+        "timeUnit": "1s",
+        "preAllocatedVUs": 50,
+        "maxVUs": 600,
+        "stages": [
+          {
+            "duration": "30s",
+            "target": 800
+          },
+          {
+            "duration": "1m",
+            "target": 800
+          },
+          {
+            "duration": "30s",
+            "target": 0
+          }
+        ]
+      },
+      "steps": [
+        {
+          "id": "search_spike",
+          "name": "Search (spike)",
+          "request": {
+            "url": "{{base}}/v1/search",
+            "query": [
+              {
+                "key": "q",
+                "value": "sale"
+              }
+            ]
+          },
+          "checks": [
+            {
+              "type": "status",
+              "value": 200
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "thresholds": [
+    {
+      "metric": "req_duration",
+      "filter": {
+        "scenario": "normal"
+      },
+      "expr": "p(99)<500"
+    },
+    {
+      "metric": "req_failed",
+      "expr": "rate<0.02",
+      "abortOnFail": true
+    },
+    {
+      "metric": "dropped_iterations",
+      "expr": "count<100"
+    }
+  ]
+}
