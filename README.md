@@ -13,6 +13,7 @@ Example load tests for [Spitfire](https://spitfire.tr/en), a self-hosted, distri
 | [`redis/session-cache.json`](redis/session-cache.json) | Redis | 2,000 iterations/s of GET + SET with a TTL; a missing key counts as success |
 | [`sql/postgres-read.json`](sql/postgres-read.json) | PostgreSQL | 30 concurrent readers: a lookup by id and an hourly summary query |
 | [`ci/github-actions.yml`](ci/github-actions.yml) | — | A performance gate in a pull request with `spitfire cloud run` |
+| [`grafana/`](grafana) | — | A Grafana dashboard for Spitfire's Prometheus endpoint (live runs, runners, the controller's health) and a scrape example |
 
 Every test here is checked with `spitfire validate`.
 
@@ -69,3 +70,18 @@ All guides: https://spitfire.tr/en/guides
 Spitfire is commercial software with a free edition (100 virtual users, 15-minute runs, every protocol and CI pass/fail). This repository holds examples only, not Spitfire's source code. The examples are MIT licensed: copy and change them freely.
 
 Questions or an example you'd like to see: open an issue.
+
+## Grafana dashboard
+
+Spitfire's controller serves Prometheus metrics on `/metrics` (scraped with a personal API token):
+live runs (virtual users, requests/s, p50/p95/p99 latency, error ratio, per-step p95), runners by
+status and location, and the controller's own health.
+
+1. Create a token in Spitfire (user menu, top right → **API tokens** → **Create token**) and add the job in
+   [`grafana/prometheus.yml`](grafana/prometheus.yml) to your Prometheus.
+2. In Grafana: **Dashboards → New → Import**, upload
+   [`grafana/spitfire-dashboard.json`](grafana/spitfire-dashboard.json) and pick that Prometheus.
+
+The **Test** variable filters the run panels by test name. A run stays on the dashboard for two
+minutes after it ends, with its final status.
+

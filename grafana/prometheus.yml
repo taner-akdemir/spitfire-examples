@@ -1,0 +1,12 @@
+# Prometheus scraping Spitfire's controller. /metrics needs a personal API
+# token: in Spitfire, the user menu (top right) → API tokens → Create token.
+scrape_configs:
+  - job_name: spitfire
+    scrape_interval: 5s          # live run metrics change every second
+    metrics_path: /metrics
+    authorization:
+      credentials: sfpat_REPLACE_WITH_YOUR_TOKEN
+    static_configs:
+      - targets: ["spitfire.example.internal:8470"]   # the controller's web UI address
+    # behind HTTPS (a reverse proxy):
+    # scheme: https
