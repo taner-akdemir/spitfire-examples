@@ -1,25 +1,28 @@
 # .github/workflows/load-test.yml
 #
-# Runs a test saved on your Spitfire controller as a performance gate: the
-# step fails when a threshold fails (exit code 99). Create a personal token
-# under "API tokens" in the profile menu and store it as SPITFIRE_TOKEN.
+# Runs a test saved on your Spitfire controller as a performance gate on every
+# pull request: the step fails when a threshold fails (exit code 99) and the
+# pull request gets a summary comment. Create a personal token in Spitfire
+# (user menu → API tokens → Create token) and store it as SPITFIRE_TOKEN.
+# The action: https://github.com/taner-akdemir/spitfire-action
 on: [pull_request]
 permissions:
   contents: read
+  pull-requests: write   # the summary comment
 jobs:
   load-test:
     runs-on: ubuntu-latest
     steps:
-      - name: Load test
-        env:
-          SPITFIRE_URL: https://spitfire.example.com   # your controller
-          SPITFIRE_TOKEN: ${{ secrets.SPITFIRE_TOKEN }}
-        run: |
-          curl -fsSL "$SPITFIRE_URL/api/v1/runner-dist/spitfire-cli-linux-amd64.gz" | gunzip > spitfire && chmod +x spitfire
-          ./spitfire cloud run "Shop: log in, browse, add to cart, check out" --env staging --confirm-writes -o summary.json
+      - uses: taner-akdemir/spitfire-action@v1
+        with:
+          url: https://spitfire.example.com   # your controller
+          token: ${{ secrets.SPITFIRE_TOKEN }}
+          test: "Shop: log in, browse, add to cart, check out"
+          environment: staging
+          confirm-writes: true                 # the test adds to the cart
       - name: Keep the summary
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: spitfire-summary
-          path: summary.json
+          path: spitfire-summary.json

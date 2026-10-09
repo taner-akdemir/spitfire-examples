@@ -12,7 +12,7 @@ Example load tests for [Spitfire](https://spitfire.tr/en), a self-hosted, distri
 | [`rabbitmq/order-queue.json`](rabbitmq/order-queue.json) | AMQP 0-9-1 | 300 persistent messages/s with publisher confirms, 10 consumers |
 | [`redis/session-cache.json`](redis/session-cache.json) | Redis | 2,000 iterations/s of GET + SET with a TTL; a missing key counts as success |
 | [`sql/postgres-read.json`](sql/postgres-read.json) | PostgreSQL | 30 concurrent readers: a lookup by id and an hourly summary query |
-| [`ci/github-actions.yml`](ci/github-actions.yml) | — | A performance gate in a pull request with `spitfire cloud run` |
+| [`ci/github-actions.yml`](ci/github-actions.yml) | — | A performance gate on every pull request with the [Spitfire GitHub Action](https://github.com/taner-akdemir/spitfire-action) |
 | [`grafana/`](grafana) | — | A Grafana dashboard for Spitfire's Prometheus endpoint (live runs, runners, the controller's health) and a scrape example |
 
 Every test here is checked with `spitfire validate`.
