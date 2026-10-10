@@ -1,0 +1,52 @@
+# Spitfire load test for GitLab CI: a hidden job to extend.
+#
+#   include:
+#     - remote: https://raw.githubusercontent.com/taner-akdemir/spitfire-examples/main/ci/gitlab/spitfire.gitlab-ci.yml
+#   load-test:
+#     extends: .spitfire-load-test
+#     variables:
+#       SPITFIRE_URL: https://spitfire.example.com
+#       SPITFIRE_TEST: "Checkout flow"
+#
+# SPITFIRE_TOKEN (Settings → CI/CD → Variables, masked): a personal API token
+# from Spitfire (user menu → API tokens). For the merge request comment also
+# SPITFIRE_GITLAB_TOKEN: a project access token with the api scope, masked.
+#
+# The CLI comes from your controller (always its version) and is checked
+# against the SHA-256 the controller sends. The test runs on your Spitfire
+# runners; the job fails when a threshold fails (exit 99; 97 aborted, 98 the
+# candidate is worse in a comparison).
+.spitfire-load-test:
+  image: alpine:3.20
+  variables:
+    SPITFIRE_URL: ""            # required: your controller
+    SPITFIRE_TEST: ""           # required: the saved test's name or id
+    SPITFIRE_ENVIRONMENT: ""    # one of the test's environments, e.g. staging
+    SPITFIRE_RUNNERS: "1"
+    SPITFIRE_REPORT_LANG: "en"  # en or tr
+    SPITFIRE_MR_COMMENT: "auto" # true, false, or auto (in merge request pipelines)
+    SPITFIRE_EXTRA_ARGS: ""     # any other `spitfire cloud run` flags, e.g. --compare A=prod,B=staging
+  script:
+    - |
+      set -eu
+      [ -n "$SPITFIRE_URL" ] && [ -n "$SPITFIRE_TEST" ] || { echo "set SPITFIRE_URL and SPITFIRE_TEST"; exit 1; }
+      apk add --no-cache curl >/dev/null
+      case "$(uname -m)" in
+        x86_64) f=spitfire-cli-linux-amd64.gz ;;
+        aarch64) f=spitfire-cli-linux-arm64.gz ;;
+        *) echo "unsupported runner architecture $(uname -m)"; exit 1 ;;
+      esac
+      want="$(curl -fsS -D - -o "/tmp/$f" "${SPITFIRE_URL%/}/api/v1/runner-dist/$f" | tr -d '\r' | awk -F': ' 'tolower($1)=="x-content-sha256"{print $2}')"
+      got="$(sha256sum "/tmp/$f" | cut -d' ' -f1)"
+      [ -n "$want" ] && [ "$want" = "$got" ] || { echo "the CLI from $SPITFIRE_URL does not match its checksum"; exit 1; }
+      gunzip -c "/tmp/$f" > /usr/local/bin/spitfire && chmod +x /usr/local/bin/spitfire
+      set -- cloud run "$SPITFIRE_TEST" -r "$SPITFIRE_RUNNERS" --report-lang "$SPITFIRE_REPORT_LANG" -o spitfire-summary.json --summary-md spitfire-summary.md
+      [ -z "$SPITFIRE_ENVIRONMENT" ] || set -- "$@" --env "$SPITFIRE_ENVIRONMENT"
+      if [ "$SPITFIRE_MR_COMMENT" = true ] || { [ "$SPITFIRE_MR_COMMENT" = auto ] && [ "${CI_PIPELINE_SOURCE:-}" = merge_request_event ]; }; then
+        set -- "$@" --pr-comment
+      fi
+      # shellcheck disable=SC2086
+      spitfire "$@" $SPITFIRE_EXTRA_ARGS
+  artifacts:
+    when: always
+    paths: [spitfire-summary.json, spitfire-summary.md]

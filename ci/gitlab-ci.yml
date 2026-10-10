@@ -1,0 +1,15 @@
+# .gitlab-ci.yml: a performance gate in merge request pipelines and on the
+# default branch, with the Spitfire template.
+include:
+  - remote: https://raw.githubusercontent.com/taner-akdemir/spitfire-examples/main/ci/gitlab/spitfire.gitlab-ci.yml
+
+load-test:
+  extends: .spitfire-load-test
+  variables:
+    SPITFIRE_URL: https://spitfire.example.com
+    SPITFIRE_TEST: "Shop: log in, browse, add to cart, check out"
+    SPITFIRE_ENVIRONMENT: staging
+    SPITFIRE_EXTRA_ARGS: --confirm-writes
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
