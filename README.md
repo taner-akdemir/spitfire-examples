@@ -1,6 +1,6 @@
 # Spitfire examples
 
-Example load tests for [Spitfire](https://spitfire.tr/en), a self-hosted, distributed load testing platform with a web UI. Each file is a complete test: open it in the web editor or run it with the CLI.
+Example load tests for [Spitfire](https://usespitfire.com), a self-hosted, distributed load testing platform with a web UI. Each file is a complete test: open it in the web editor or run it with the CLI.
 
 | Example | Protocol | What it shows |
 |---|---|---|
@@ -22,13 +22,13 @@ Every test here is checked with `spitfire validate`.
 
 ```bash
 # one machine: Postgres + controller + web UI + 2 runners (Docker)
-curl -fsSL https://spitfire.tr/install.sh | bash -s -- docker
+curl -fsSL https://spitfire.sh | bash -s -- docker
 
 # the current kubectl context
-curl -fsSL https://spitfire.tr/install.sh | bash -s -- kubernetes
+curl -fsSL https://spitfire.sh | bash -s -- kubernetes
 ```
 
-The web UI opens on port 8470. More: [installation guide](https://spitfire.tr/en/install).
+The web UI opens on port 8470. More: [installation guide](https://usespitfire.com/install).
 
 ## Use an example
 
@@ -55,16 +55,16 @@ The gRPC example needs the service's schema: Spitfire reads it from server refle
 
 The examples come from these guides, which explain what to measure and the usual mistakes:
 
-- [Load testing without scripting](https://spitfire.tr/en/guides/load-testing-without-scripting)
-- [gRPC load testing](https://spitfire.tr/en/guides/grpc-load-testing)
-- [Kafka load testing](https://spitfire.tr/en/guides/kafka-load-testing)
-- [MQTT load testing](https://spitfire.tr/en/guides/mqtt-load-testing)
-- [RabbitMQ load testing](https://spitfire.tr/en/guides/rabbitmq-load-testing)
-- [Redis load testing](https://spitfire.tr/en/guides/redis-load-testing)
-- [Database load testing](https://spitfire.tr/en/guides/database-load-testing)
-- [Performance testing in CI/CD](https://spitfire.tr/en/guides/performance-testing-in-ci-cd)
+- [Load testing without scripting](https://usespitfire.com/guides/load-testing-without-scripting)
+- [gRPC load testing](https://usespitfire.com/guides/grpc-load-testing)
+- [Kafka load testing](https://usespitfire.com/guides/kafka-load-testing)
+- [MQTT load testing](https://usespitfire.com/guides/mqtt-load-testing)
+- [RabbitMQ load testing](https://usespitfire.com/guides/rabbitmq-load-testing)
+- [Redis load testing](https://usespitfire.com/guides/redis-load-testing)
+- [Database load testing](https://usespitfire.com/guides/database-load-testing)
+- [Performance testing in CI/CD](https://usespitfire.com/guides/performance-testing-in-ci-cd)
 
-All guides: https://spitfire.tr/en/guides
+All guides: https://usespitfire.com/guides
 
 ## About
 
