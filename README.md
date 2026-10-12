@@ -37,8 +37,8 @@ The web UI opens on port 8470. More: [installation guide](https://usespitfire.co
 **With the CLI**, no controller needed. The CLI ships in the Docker image:
 
 ```bash
-docker run --rm -v "$PWD:/work" -w /work algebransoft/spitfire spitfire validate http/shop-checkout.json
-docker run --rm -v "$PWD:/work" -w /work algebransoft/spitfire spitfire run http/constant-rate-with-spike.json
+docker run --rm -v "$PWD:/work" -w /work usespitfire/spitfire spitfire validate http/shop-checkout.json
+docker run --rm -v "$PWD:/work" -w /work usespitfire/spitfire spitfire run http/constant-rate-with-spike.json
 ```
 
 For the non-HTTP examples, copy [`connections.example.json`](connections.example.json), fill in your brokers and databases, and pass it with `-c`:
