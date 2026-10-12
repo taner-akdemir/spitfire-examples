@@ -1,7 +1,7 @@
 # Spitfire load test for GitLab CI: a hidden job to extend.
 #
 #   include:
-#     - remote: https://raw.githubusercontent.com/taner-akdemir/spitfire-examples/main/ci/gitlab/spitfire.gitlab-ci.yml
+#     - remote: https://raw.githubusercontent.com/usespitfire/spitfire-examples/main/ci/gitlab/spitfire.gitlab-ci.yml
 #   load-test:
 #     extends: .spitfire-load-test
 #     variables:
